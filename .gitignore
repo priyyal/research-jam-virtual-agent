@@ -7,3 +7,5 @@ data/
 outputs/
 *.csv
 *.json
+.idea/
+*.egg-info
