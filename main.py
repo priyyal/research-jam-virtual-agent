@@ -14,6 +14,10 @@ HEALTH_MAX = 100
 HEALTH_PENALTY_WRONG = 15
 HALLWAY_PAUSE_MS = 250       # brief pause after a choice
 FPS_DEFAULT = 60
+NUM_HALLWAYS = 3
+AGENTS_PER_HALLWAY = 9
+MAX_TRIAL_SECONDS = 30
+TIME_PENALTY_PER_SEC = 1
 
 # Asset paths
 ASSISTANT_DIR = "images/assistants"
@@ -41,6 +45,12 @@ def load_png(path):
     img = pygame.image.load(path).convert_alpha()
     return img
 
+def log_event(event_type, **kwargs):
+    """Prints key player activity events to terminal."""
+    parts = [f"[{event_type.upper()}]"]
+    for k, v in kwargs.items():
+        parts.append(f"{k}={v}")
+    print(" ".join(parts), flush=True)
 
 # -----------------------------
 # Core game
@@ -92,17 +102,38 @@ class Game:
 
     # ------------- public API -------------
     def run(self):
-        """Run N levels. Each level: maze -> hallway sequence with all 9 agents."""
+        """
+		Session flow:
+		  for each hallway:
+			play maze once -> then do AGENTS_PER_HALLWAY agent trials
+		Health NEVER ends the session; we just clamp at [0, HEALTH_MAX].
+		Assistants are cycled without immediate repeats; pool reshuffles as needed.
+		"""
+        # assistant queue helper
+        assistant_pool = deepcopy(self.image_filenames)
+        random.shuffle(assistant_pool)
+
+        def next_assistant_filename():
+            nonlocal assistant_pool
+            if not assistant_pool:                   # recycle pool if empty
+                assistant_pool = deepcopy(self.image_filenames)
+                random.shuffle(assistant_pool)
+            return assistant_pool.pop()
+
+        # we treat num_levels as “sessions”; most people will just use 1
         for _ in range(self.num_levels):
-            self._run_maze_trial()
+            for _ in range(NUM_HALLWAYS):
+                # 1) Maze segment before this hallway (urgency buffer)
+                self._run_maze_trial()
 
-            randomized_filenames = deepcopy(self.image_filenames)
-            random.shuffle(randomized_filenames)
-
-            for filename in randomized_filenames:
-                self._run_hallway_trial(filename)
+                # 2) Hallway with N agents
+                for _ in range(AGENTS_PER_HALLWAY):
+                    filename = next_assistant_filename()
+                    self._run_hallway_trial(filename)
 
         pygame.quit()
+
+
 
     # ------------- internals -------------
     def _run_maze_trial(self):
@@ -159,7 +190,7 @@ class Game:
             self.clock.tick(self.fps)
 
     def _run_hallway_trial(self, assistant_filename: str):
-        """Show hallway with a single agent. Player picks left/right; wrong choice reduces health."""
+        """One agent trial in the hallway. Health changes but never ends the session."""
         # load & scale assistant sprite
         assistant_img = load_png(os.path.join(ASSISTANT_DIR, assistant_filename))
         assistant_img = pygame.transform.smoothscale(
@@ -171,20 +202,18 @@ class Game:
         # ground-truth correct door for this trial
         correct_door = random.choice(["left", "right"])
 
-        # for now, agent advice is random (later, tie to "lying %" mechanic)
+        # for now, agent advice is random (later: tie to per-agent lie rate)
         advise = random.choice(["left", "right"])
         bubble_img = self.say_left_img if advise == "left" else self.say_right_img
 
         # positions
-        assistant_rect = assistant_img.get_rect(
-            center=(self.width // 2, self.height // 2 - 40)
-        )
-        bubble_rect = bubble_img.get_rect(
-            midbottom=(assistant_rect.centerx, assistant_rect.top - 10)
-        )
+        assistant_rect = assistant_img.get_rect(center=(self.width // 2, self.height // 2 - 40))
+        bubble_rect = bubble_img.get_rect(midbottom=(assistant_rect.centerx, assistant_rect.top - 10))
 
-        choosing = True
+        # timing
+        start_ticks = pygame.time.get_ticks()
         selected = None
+        choosing = True
         while choosing:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -193,34 +222,52 @@ class Game:
                     if event.key == pygame.K_ESCAPE:
                         close_game()
                     if event.key in (pygame.K_LEFT, pygame.K_a):
-                        selected = "left"
-                        print("left", flush=True)
-                        choosing = False
+                        selected = "left"; print("left", flush=True); choosing = False
                     elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                        selected = "right"
-                        print("right", flush=True)
-                        choosing = False
+                        selected = "right"; print("right", flush=True); choosing = False
                     elif event.key == pygame.K_x:
-                        # optional peek demo (placeholder visuals)
                         self._show_x_ray()
 
-            # draw hallway + agent + speech bubble
+            # draw hallway + agent + speech bubble + health bar
             self.screen.blit(self.hallway_image, (0, 0))
             self.screen.blit(assistant_img, assistant_rect)
             self.screen.blit(bubble_img, bubble_rect)
-
-            # health HUD
             draw_health_bar(self.screen, 20, 18, self.width - 40, 16, self.health)
+
+            # optional: show a simple countdown text
+            elapsed = (pygame.time.get_ticks() - start_ticks) / 1000.0
+            remaining = max(0, int(MAX_TRIAL_SECONDS - elapsed))
+            font = pygame.font.SysFont(None, 28)
+            t_surf = font.render(f"Time: {remaining}s", True, (230, 230, 230))
+            self.screen.blit(t_surf, (20, 40))
 
             pygame.display.update()
             self.clock.tick(self.fps)
 
-        # resolve choice and apply health penalty if wrong
-        if selected is not None and selected != correct_door:
-            self.health = max(0, self.health - HEALTH_PENALTY_WRONG)
+        # resolve choice
+        end_ticks = pygame.time.get_ticks()
+        elapsed_sec = (end_ticks - start_ticks) / 1000.0
 
-        # brief pause to let player see the result before next agent
+        # wrong-door penalty
+        if selected is not None and selected != correct_door:
+            self.health -= HEALTH_PENALTY_WRONG
+
+        # time penalty if too slow (soft limit)
+        if elapsed_sec > MAX_TRIAL_SECONDS:
+            over = elapsed_sec - MAX_TRIAL_SECONDS
+            self.health -= int(over * TIME_PENALTY_PER_SEC)
+
+        # clamp health and NEVER end session from health reaching 0
+        self.health = max(0, min(HEALTH_MAX, self.health))
+
+        log_event("hallway_start", agent=assistant_filename, advise=advise, correct=correct_door)
+        log_event("choice_made", selected=selected, correct=correct_door)
+        log_event("health_update", new_health=self.health)
+
+
+        # tiny pause so player can see result before next agent
         pygame.time.delay(HALLWAY_PAUSE_MS)
+
 
     def _show_x_ray(self):
         """Simple placeholder peek: draw colored columns at left/right door areas."""
