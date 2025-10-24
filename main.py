@@ -22,7 +22,7 @@ class Game:
         # Game stats
         self.max_health = 100
         self.health = self.max_health
-        self.max_time = 30  # seconds per hallway
+        self.max_time = 50  # seconds per hallway
         self.time_remaining = self.max_time * 1000  # milliseconds
         self.font = pygame.font.SysFont("Arial", 28)
 
@@ -46,6 +46,8 @@ class Game:
 
             #self.time_remaining = self.max_time * 1000
             #hallway_start_time = pygame.time.get_ticks()
+            peek_trials = random.sample(range(1, 10), 3)
+            print(f"Peek trials for hallway {level + 1}: {peek_trials}")
 
             for trial_index, filename in enumerate(randomized_filenames[:9], start=1):
                 print(f"\nAgent {trial_index}/9 in Hallway {level + 1}")
@@ -67,6 +69,10 @@ class Game:
 
                 correct_door = random.choice(['left', 'right'])
                 show_hallway = True
+
+                if trial_index in peek_trials:
+                    print(f"Hint shown for agent {trial_index} (correct door: {correct_door})")
+                    self._show_hint(correct_door)
 
                 # --- HALLWAY LOOP (until choice made or time up) --- #
                 while show_hallway:
@@ -101,17 +107,17 @@ class Game:
 
                         if event.type == pygame.KEYDOWN:
                             if event.key == pygame.K_LEFT:
-                                print("left")
+                                self._flash_choice("left")
                                 self._log_decision(level, trial_index, "left", correct_door)
                                 if correct_door != 'left':
-                                    self._update_health(-10)
+                                    self._update_health(-5)
                                 show_hallway = False
 
                             elif event.key == pygame.K_RIGHT:
-                                print("right")
+                                self._flash_choice("right")
                                 self._log_decision(level, trial_index, "right", correct_door)
                                 if correct_door != 'right':
-                                    self._update_health(-10)
+                                    self._update_health(-5)
                                 show_hallway = False
 
                             elif event.key == pygame.K_x:
@@ -186,6 +192,24 @@ class Game:
         self.health = max(0, min(self.max_health, self.health + delta))
         print(f"Health updated: {self.health}")
 
+    def _show_hint(self, correct_door):
+        """Briefly shows which door is correct."""
+        hint_color = (0, 100, 255)  # blue hint color
+        width = 200
+        height = 400
+        y = self.height // 2 - height // 2
+
+        if correct_door == "left":
+            x = 80
+        else:
+            x = self.width - width - 80
+
+        pygame.draw.rect(self.screen, hint_color, (x, y, width, height), 6)
+        pygame.display.update()
+        pygame.time.delay(1500)  # show for 2 seconds
+
+
+
     def _draw_health_bar(self):
         bar_width = 300
         bar_height = 25
@@ -246,6 +270,22 @@ class Game:
         print("All hallways complete – exiting game.")
         pygame.quit()
         sys.exit()
+
+    def _flash_choice(self, choice):
+        """Flash the chosen door briefly for visual feedback."""
+        flash_color = (0, 255, 0)  # bright green for now
+        width = 200
+        height = 400
+        y = self.height // 2 - height // 2
+
+        if choice == "left":
+            x = 80
+        else:
+            x = self.width - width - 80
+
+        pygame.draw.rect(self.screen, flash_color, (x, y, width, height), 5)
+        pygame.display.update()
+        pygame.time.delay(300)
 
     def _log_decision(self, hallway, trial, choice, correct_door):
         correct = (choice == correct_door)
