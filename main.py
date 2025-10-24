@@ -181,7 +181,8 @@ class Game:
                             enemy.move()
                         except IndexError:
                             print('Player was caught!')
-                            return
+                            self._game_over("The enemy caught you!")
+                            close_game()
                         enemy_move_time = pygame.time.get_ticks()
                     enemy.draw()
 
