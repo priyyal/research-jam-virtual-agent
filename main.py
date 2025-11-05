@@ -46,8 +46,8 @@ class Game:
 
             #self.time_remaining = self.max_time * 1000
             #hallway_start_time = pygame.time.get_ticks()
-            peek_trials = random.sample(range(1, 10), 3)
-            print(f"Peek trials for hallway {level + 1}: {peek_trials}")
+            #peek_trials = random.sample(range(1, 10), 3)
+            #print(f"Peek trials for hallway {level + 1}: {peek_trials}")
 
             for trial_index, filename in enumerate(randomized_filenames[:9], start=1):
                 print(f"\nAgent {trial_index}/9 in Hallway {level + 1}")
@@ -70,9 +70,9 @@ class Game:
                 correct_door = random.choice(['left', 'right'])
                 show_hallway = True
 
-                if trial_index in peek_trials:
-                    print(f"Hint shown for agent {trial_index} (correct door: {correct_door})")
-                    self._show_hint(correct_door)
+                #if trial_index in peek_trials:
+                 #   print(f"Hint shown for agent {trial_index} (correct door: {correct_door})")
+                  #  self._show_hint(correct_door)
 
                 # --- HALLWAY LOOP (until choice made or time up) --- #
                 while show_hallway:
@@ -192,9 +192,9 @@ class Game:
     def _update_health(self, delta):
         self.health = max(0, min(self.max_health, self.health + delta))
         print(f"Health updated: {self.health}")
-
+    """"
     def _show_hint(self, correct_door):
-        """Briefly shows which door is correct."""
+        #Briefly shows which door is correct.
         hint_color = (0, 100, 255)  # blue hint color
         width = 200
         height = 400
@@ -208,7 +208,7 @@ class Game:
         pygame.draw.rect(self.screen, hint_color, (x, y, width, height), 6)
         pygame.display.update()
         pygame.time.delay(1500)  # show for 2 seconds
-
+    """
 
 
     def _draw_health_bar(self):
