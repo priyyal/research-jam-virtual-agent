@@ -9,3 +9,4 @@ outputs/
 *.json
 .idea/
 *.egg-info
+.DS_Store
