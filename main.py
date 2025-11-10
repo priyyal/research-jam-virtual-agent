@@ -3,16 +3,18 @@ import sys
 from copy import deepcopy
 import random
 
+import csv, datetime
 import pygame
 from maze import Maze
 from actors import Player, Enemy
 
 
 class Game:
-    def __init__(self, width, height, fps = 60, num_levels = 1) -> None:
+    def __init__(self, width, height, fps = 60, num_levels = 1, participant_id = "UNKNOWN") -> None:
         pygame.init()
         self.width = width
         self.height = height
+        self.participant_id = participant_id
         self.screen = pygame.display.set_mode((width, height))
         self.clock = pygame.time.Clock()
         self.fps = fps
@@ -25,6 +27,17 @@ class Game:
         self.max_time = 50  # seconds per hallway
         self.time_remaining = self.max_time * 1000  # milliseconds
         self.font = pygame.font.SysFont("Arial", 28)
+
+        os.makedirs("data", exist_ok=True)
+        self.logfile = open(f"data/{self.participant_id}_trials.csv", "a", newline="")
+        self.logwriter = csv.writer(self.logfile)
+
+        # Write header if it's a new file
+        if os.stat(f"data/{self.participant_id}_trials.csv").st_size == 0:
+            self.logwriter.writerow([
+                "timestamp", "participant_id", "hallway", "trial", "agent_image",
+                "correct_door", "player_choice", "correct", "health_after", "time_remaining"
+            ])
 
     def run(self):
         hallway_image = pygame.image.load('images/hallway.png')
@@ -108,14 +121,14 @@ class Game:
                         if event.type == pygame.KEYDOWN:
                             if event.key == pygame.K_LEFT:
                                 self._flash_choice("left")
-                                self._log_decision(level, trial_index, "left", correct_door)
+                                self._log_decision(level, trial_index, "left", correct_door, filename)
                                 if correct_door != 'left':
                                     self._update_health(-5)
                                 show_hallway = False
 
                             elif event.key == pygame.K_RIGHT:
                                 self._flash_choice("right")
-                                self._log_decision(level, trial_index, "right", correct_door)
+                                self._log_decision(level, trial_index, "right", correct_door, filename)
                                 if correct_door != 'right':
                                     self._update_health(-5)
                                 show_hallway = False
@@ -288,9 +301,24 @@ class Game:
         pygame.display.update()
         pygame.time.delay(300)
 
-    def _log_decision(self, hallway, trial, choice, correct_door):
+    def _log_decision(self, hallway, trial, choice, correct_door, agent_filename):
         correct = (choice == correct_door)
-        print(f"Hallway {hallway + 1}, Trial {trial}: chose {choice}, correct = {correct}, Health = {self.health}")
+
+        timestamp = datetime.datetime.now().isoformat()
+        self.logwriter.writerow([
+            timestamp,
+            self.participant_id,
+            hallway + 1,
+            trial,
+            agent_filename,
+            correct_door,
+            choice,
+            correct,
+            self.health,
+            round(self.time_remaining / 1000, 2)
+        ])
+        self.logfile.flush()
+
 
     def _show_x_ray(self):
         pygame.draw.rect(self.screen, (210, 74, 210), (80, 80, 100, 400))
