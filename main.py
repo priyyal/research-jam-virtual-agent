@@ -10,11 +10,14 @@ from actors import Player, Enemy
 
 
 class Game:
-    def __init__(self, width, height, fps = 60, num_levels = 1, participant_id = "UNKNOWN") -> None:
+    def __init__(self, width, height, fps = 60, num_levels = 1, participant_id = "UNKNOWN", time_per_hallway=50, enemy_speed=500, assistant_type="mixed") -> None:
         pygame.init()
         self.width = width
         self.height = height
         self.participant_id = participant_id
+        self.max_time = time_per_hallway
+        self.enemy_move_delay = enemy_speed
+        self.assistant_type = assistant_type
         self.screen = pygame.display.set_mode((width, height))
         self.clock = pygame.time.Clock()
         self.fps = fps
