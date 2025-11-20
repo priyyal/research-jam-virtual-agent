@@ -273,20 +273,29 @@ class Game:
         sys.exit()
 
     def _flash_choice(self, choice):
-        """Flash the chosen door briefly for visual feedback."""
-        flash_color = (0, 255, 0)  # bright green for now
-        width = 200
-        height = 400
-        y = self.height // 2 - height // 2
+        flash_color = (0, 255, 0)
+
+        # DOOR BOUNDING BOXES (from hallway.png)
+        LEFT_DOOR_X = 40
+        RIGHT_DOOR_X = 595
+        DOOR_Y = 85
+        DOOR_WIDTH = 180
+        DOOR_HEIGHT = 330
 
         if choice == "left":
-            x = 80
+            x = LEFT_DOOR_X
         else:
-            x = self.width - width - 80
+            x = RIGHT_DOOR_X
 
-        pygame.draw.rect(self.screen, flash_color, (x, y, width, height), 5)
+        pygame.draw.rect(
+            self.screen,
+            flash_color,
+            (x, DOOR_Y, DOOR_WIDTH, DOOR_HEIGHT),
+            6
+        )
         pygame.display.update()
-        pygame.time.delay(300)
+        pygame.time.delay(250)
+
 
     def _log_decision(self, hallway, trial, choice, correct_door):
         correct = (choice == correct_door)
