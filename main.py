@@ -69,19 +69,28 @@ class Game:
                 print(f"\nAgent {trial_index}/9 in Hallway {level + 1}")
                 pygame.event.clear()  # clear leftovers
 
+                assistant_scale = 0.68   # your perfect size
+                bubble_scale = 0.11      # adjust if you want smaller or bigger bubbles
+
                 assistant_image = pygame.image.load(f"images/assistants/{filename}")
                 assistant_image = pygame.transform.scale(
                     assistant_image,
-                    (assistant_image.get_width() * shrink_factor,
-                     assistant_image.get_height() * shrink_factor)
+                    (
+                        int(assistant_image.get_width() * assistant_scale),
+                        int(assistant_image.get_height() * assistant_scale)
+                    )
                 )
+
                 direction = random.choice(['left', 'right'])
                 text_bubble_image = pygame.image.load(f"images/{direction}-speech-bubble.png")
                 text_bubble_image = pygame.transform.scale(
                     text_bubble_image,
-                    (text_bubble_image.get_width() * shrink_factor,
-                     text_bubble_image.get_height() * shrink_factor)
+                    (
+                        int(text_bubble_image.get_width() * bubble_scale),
+                        int(text_bubble_image.get_height() * bubble_scale)
+                    )
                 )
+
 
                 correct_door = random.choice(['left', 'right'])
                 show_hallway = True
