@@ -45,18 +45,31 @@ class Player(Actor):
         # speed = 0.05
 
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]: 
+        if keys[pygame.K_LEFT]:
             dx = -1
-        elif keys[pygame.K_RIGHT]: 
+        elif keys[pygame.K_RIGHT]:
             dx = 1
-        elif keys[pygame.K_UP]: 
+        elif keys[pygame.K_UP]:
             dy = -1
-        elif keys[pygame.K_DOWN]: 
+        elif keys[pygame.K_DOWN]:
             dy = 1
         # dx *= speed
         # dy *= speed
         new_x, new_y = self.x + dx, self.y + dy
         return new_x, new_y
+
+    def draw(self):
+        # Draw Pac-Man as a yellow circle
+        pygame.draw.circle(
+            self.maze.screen,
+            (255, 255, 0),   # yellow
+            (
+                self.x * self.maze.cell_size + self.maze.cell_size // 2,
+                self.y * self.maze.cell_size + self.maze.cell_size // 2
+            ),
+            self.maze.cell_size // 2 - 4
+        )
+
 
 
 class Enemy(Actor):
@@ -88,3 +101,15 @@ class Enemy(Actor):
 
         raise IndexError('Error finding next decision for Enemy.')
 
+
+    def draw(self):
+        # Draw enemy as a red circle
+        pygame.draw.circle(
+            self.maze.screen,
+            (255, 0, 0),   # red
+            (
+                self.x * self.maze.cell_size + self.maze.cell_size // 2,
+                self.y * self.maze.cell_size + self.maze.cell_size // 2
+            ),
+            self.maze.cell_size // 2 - 4
+        )

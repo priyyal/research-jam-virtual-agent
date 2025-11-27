@@ -27,7 +27,7 @@ class Game:
         # Game stats
         self.max_health = 100
         self.health = self.max_health
-        self.max_time = 50  # seconds per hallway
+        self.max_time = 130  # seconds per hallway
         self.time_remaining = self.max_time * 1000  # milliseconds
         self.font = pygame.font.SysFont("Arial", 28)
 
@@ -177,12 +177,12 @@ class Game:
         player = Player(maze)
         enemy = Enemy(maze, player)
         enemy_move_time = pygame.time.get_ticks()
-        enemy_move_delay = 500 # milliseconds
+        enemy_move_delay = 300 # milliseconds
         enemy_is_active = False
 
         while True:
             self.screen.fill("black")
-            
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     close_game()

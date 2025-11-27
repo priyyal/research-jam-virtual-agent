@@ -7,9 +7,16 @@ import pygame
 class Maze:
     def __init__(self, screen, complexity = 0, cell_size = 64) -> None:
         self.screen = screen
-        self.num_cols = 8
-        self.num_rows = 8
-        self.cell_size = cell_size
+        self.num_cols = 12
+        self.num_rows = 12
+        screen_w = screen.get_width()
+        screen_h = screen.get_height()
+
+        self.cell_size = min(
+            screen_w // self.num_cols,
+            screen_h // self.num_rows
+        )
+
         self.grid = [[1 for _ in range(self.num_cols)] for _ in range(self.num_rows)]  # 1 = wall, 0 = path
         self.start = (0, 0)
 
@@ -42,9 +49,22 @@ class Maze:
         for y in range(self.num_rows):
             for x in range(self.num_cols):
                 color = (255, 255, 255) if self.is_walkable(x, y) else (0, 0, 0)
-                pygame.draw.rect(self.screen, color, (x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size))
+                offset_x = (self.screen.get_width() - self.num_cols * self.cell_size) // 2
+                offset_y = (self.screen.get_height() - self.num_rows * self.cell_size) // 2
 
-        pygame.draw.rect(self.screen, (0, 0, 255), (self.goal[0] * self.cell_size, self.goal[1] * self.cell_size, self.cell_size, self.cell_size))
+                pygame.draw.rect(
+                    self.screen,
+                    color,
+                    (
+                        offset_x + x * self.cell_size,
+                        offset_y + y * self.cell_size,
+                        self.cell_size,
+                        self.cell_size
+                    )
+                )
+
+
+        pygame.draw.rect(self.screen, (0, 0, 255), (offset_x + self.goal[0] * self.cell_size, offset_y + self.goal[1] * self.cell_size, self.cell_size, self.cell_size))
 
     def is_walkable(self, x, y):
         """Checks if a position is walkable."""
