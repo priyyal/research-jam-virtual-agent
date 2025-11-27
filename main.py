@@ -45,7 +45,7 @@ class Game:
     def run(self):
         hallway_image = pygame.image.load('images/hallway.png')
         hallway_image = pygame.transform.scale(hallway_image, (self.width, self.height))
-        shrink_factor = 0.15
+        shrink_factor = 0.68
 
         self.time_remaining = self.max_time * 1000
         game_start_time = pygame.time.get_ticks()

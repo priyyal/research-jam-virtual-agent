@@ -1,0 +1,3 @@
+([('main',
+   '/Users/priyalduggal/Desktop/research-jam-virtual-agent/dist/main',
+   'EXECUTABLE')],)
