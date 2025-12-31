@@ -27,7 +27,10 @@ class Game:
         # Game stats
         self.max_health = 100
         self.health = self.max_health
-        self.max_time = 130  # seconds per hallway
+        # Per-hallway time limits (seconds)
+        self.round_times = [90, 60, 40]   # round 3 could be 35–40; adjust as needed
+        self.max_time = self.round_times[0]  # default for drawing bar before round starts
+        self.time_remaining = self.max_time * 1000
         self.time_remaining = self.max_time * 1000  # milliseconds
         self.font = pygame.font.SysFont("Arial", 28)
 
@@ -46,7 +49,7 @@ class Game:
         self.logwriter.writerow([
                 "timestamp",
                 "participant_id",
-                "run_id"
+                "run_id",
                 "hallway",
                 "trial",
                 "agent_image",
@@ -68,12 +71,17 @@ class Game:
         shrink_factor = 0.68
 
         self.time_remaining = self.max_time * 1000
-        game_start_time = pygame.time.get_ticks()
+        #game_start_time = pygame.time.get_ticks()
         # --- MAIN LOOP: 3 Hallways --- #
         for level in range(self.num_levels):
             print(f"\n=== Entering Hallway {level + 1} ===")
+            # --- SET PER-ROUND TIMER ---
+            self.max_time = self.round_times[level] if level < len(self.round_times) else self.round_times[-1]
+            hallway_start_time = pygame.time.get_ticks()
+            self.time_remaining = self.max_time * 1000
 
-            # 1️⃣ Pac-Man Maze first
+
+# 1️⃣ Pac-Man Maze first
             self._run_trial()
 
             # After maze, start hallway phase
@@ -126,7 +134,7 @@ class Game:
                 while show_hallway:
                     dt = self.clock.tick(self.fps)
                     #self.time_remaining -= dt
-                    elapsed_time = pygame.time.get_ticks() - game_start_time
+                    elapsed_time = pygame.time.get_ticks() - hallway_start_time
                     self.time_remaining = (self.max_time*1000) - elapsed_time
 
                     self.screen.blit(hallway_image, (0, 0))
