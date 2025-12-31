@@ -32,15 +32,35 @@ class Game:
         self.font = pygame.font.SysFont("Arial", 28)
 
         os.makedirs("data", exist_ok=True)
-        self.logfile = open(f"data/{self.participant_id}_trials.csv", "a", newline="")
+
+        # Unique run ID based on timestamp (safe for filenames)
+        run_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.run_id = run_id
+        self.log_path = f"data/{self.participant_id}_run_{run_id}_trials.csv"
+
+        # "w" = new file every run
+        self.logfile = open(self.log_path, "w", newline="")
         self.logwriter = csv.writer(self.logfile)
 
         # Write header if it's a new file
-        if os.stat(f"data/{self.participant_id}_trials.csv").st_size == 0:
-            self.logwriter.writerow([
-                "timestamp", "participant_id", "hallway", "trial", "agent_image",
-                "correct_door", "player_choice", "correct", "health_after", "time_remaining"
+        self.logwriter.writerow([
+                "timestamp",
+                "participant_id",
+                "run_id"
+                "hallway",
+                "trial",
+                "agent_image",
+                "agent_suggestion",
+                "agent_truthfulness",
+                "correct_door",
+                "player_choice",
+                "correct",
+                "health_after",
+                "time_remaining"
             ])
+
+        self.logfile.flush()
+        print(f"[LOG] Writing trial data to: {self.log_path}")
 
     def run(self):
         hallway_image = pygame.image.load('images/hallway.png')
@@ -82,6 +102,13 @@ class Game:
                 )
 
                 direction = random.choice(['left', 'right'])
+                agent_suggestion = direction
+
+                correct_door = random.choice(['left', 'right'])
+                agent_truthfulness = (agent_suggestion == correct_door)
+
+                show_hallway = True
+
                 text_bubble_image = pygame.image.load(f"images/{direction}-speech-bubble.png")
                 text_bubble_image = pygame.transform.scale(
                     text_bubble_image,
@@ -90,10 +117,6 @@ class Game:
                         int(text_bubble_image.get_height() * bubble_scale)
                     )
                 )
-
-
-                correct_door = random.choice(['left', 'right'])
-                show_hallway = True
 
                 #if trial_index in peek_trials:
                  #   print(f"Hint shown for agent {trial_index} (correct door: {correct_door})")
@@ -133,14 +156,14 @@ class Game:
                         if event.type == pygame.KEYDOWN:
                             if event.key == pygame.K_LEFT:
                                 self._flash_choice("left")
-                                self._log_decision(level, trial_index, "left", correct_door, filename)
+                                self._log_decision(level, trial_index, "left", correct_door, filename, agent_suggestion, agent_truthfulness)
                                 if correct_door != 'left':
                                     self._update_health(-5)
                                 show_hallway = False
 
                             elif event.key == pygame.K_RIGHT:
                                 self._flash_choice("right")
-                                self._log_decision(level, trial_index, "right", correct_door, filename)
+                                self._log_decision(level, trial_index, "right", correct_door, filename, agent_suggestion, agent_truthfulness)
                                 if correct_door != 'right':
                                     self._update_health(-5)
                                 show_hallway = False
@@ -322,16 +345,19 @@ class Game:
         pygame.time.delay(250)
 
 
-    def _log_decision(self, hallway, trial, choice, correct_door, agent_filename):
+    def _log_decision(self, hallway, trial, choice, correct_door, agent_filename, agent_suggestion, agent_truthfulness):
         correct = (choice == correct_door)
 
         timestamp = datetime.datetime.now().isoformat()
         self.logwriter.writerow([
             timestamp,
             self.participant_id,
+            self.run_id,
             hallway + 1,
             trial,
             agent_filename,
+            agent_suggestion,
+            agent_truthfulness,
             correct_door,
             choice,
             correct,
