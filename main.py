@@ -60,6 +60,9 @@ class Game:
         self.max_health = 100
         self.health = self.max_health
 
+
+        self.participant_id = self.participant_id.replace(" ", "").replace("/", "_")
+
         # Per-hallway time limits (seconds)
         #self.round_times = [90, 60, 40]   round 3 could be 35–40; adjust as needed
         self.max_time = self.round_times[0]  # default for drawing bar before round starts
@@ -70,9 +73,18 @@ class Game:
         os.makedirs("data", exist_ok=True)
 
         # Unique run ID based on timestamp (safe for filenames)
-        run_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.run_id = run_id
-        self.log_path = f"data/{self.participant_id}_run_{run_id}_trials.csv"
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+
+        self.run_id = timestamp
+
+        self.log_path = (
+            f"data/"
+            f"{self.participant_id}_"
+            f"{self.assistant_type}_"
+            f"{self.num_levels}hallways_"
+            f"{timestamp}.csv"
+        )
+
 
         # "w" = new file every run
         self.logfile = open(self.log_path, "w", newline="")
@@ -87,6 +99,8 @@ class Game:
                 "hallway",
                 "trial",
                 "agent_image",
+                "agent_name",
+                "agent_gender",
                 "agent_suggestion",
                 "agent_truthfulness",
                 "correct_door",
@@ -138,13 +152,10 @@ class Game:
 
 
                 # FORCE all agents to same size (this fixes F1/F2)
-                TARGET_WIDTH = 340
-                TARGET_HEIGHT = 340
+                MAX_W = 340
+                MAX_H = 340
+                assistant_image = self.scale_to_fit(assistant_image, MAX_W, MAX_H)
 
-                assistant_image = pygame.transform.smoothscale(
-                    assistant_image,
-                    (TARGET_WIDTH, TARGET_HEIGHT)
-                )
                 meta = self.agent_meta.get(filename, {})
                 agent_name = meta.get("name", "Agent")
                 agent_gender = meta.get("gender", "unknown")
@@ -193,21 +204,28 @@ class Game:
                             self.width // 2 - text_bubble_image.get_width() // 2,
                             self.height // 2
                             - text_bubble_image.get_height()
-                            - assistant_image.get_height() // 2,
+                            - assistant_image.get_height() // 2 -15,
                         ),
                     )
 
                     # --- DRAW AGENT NAME (under agent) ---
                     agent_name = self.agent_meta.get(filename, {}).get("name", "Agent")
+                    # --- DRAW AGENT NAME (under the speech bubble) ---
                     name_text = self.font.render(agent_name, True, (255, 255, 255))
 
-                    self.screen.blit(
-                        name_text,
-                        (
-                            self.width // 2 - name_text.get_width() // 2,
-                            self.height // 2 + assistant_image.get_height() // 2 + 10
-                        ),
-                    )
+                    # bubble_x = self.width // 2 - text_bubble_image.get_width() // 2
+                    # bubble_y = (
+                    #         self.height // 2
+                    #         - text_bubble_image.get_height()
+                    #         - assistant_image.get_height() // 2
+                    # )
+
+                    name_x = self.width // 2 - name_text.get_width() // 2
+                    #name_y = bubble_y + text_bubble_image.get_height() + 6  # just below bubble
+                    name_y = self.height // 2 - assistant_image.get_height() // 2 - 18
+
+                    self.screen.blit(name_text, (name_x, name_y))
+
 
 
                     self._draw_health_bar()
@@ -268,6 +286,8 @@ class Game:
                                     "right",
                                     correct_door,
                                     filename,
+                                    agent_name,
+                                    agent_gender,
                                     agent_suggestion,
                                     agent_truthfulness,
                                     reaction_time_ms,
@@ -488,6 +508,13 @@ class Game:
     def _show_x_ray(self):
         pygame.draw.rect(self.screen, (210, 74, 210), (80, 80, 100, 400))
         pygame.draw.rect(self.screen, (100, 54, 100), (680, 80, 100, 400))
+
+    def scale_to_fit(self, image, max_w, max_h):
+        w, h = image.get_size()
+        scale = min(max_w / w, max_h / h)
+        new_size = (int(w * scale), int(h * scale))
+        return pygame.transform.smoothscale(image, new_size)
+
 
 
 def close_game():
