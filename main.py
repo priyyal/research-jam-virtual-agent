@@ -42,6 +42,19 @@ class Game:
         self.image_filenames = [
             f for f in os.listdir("images/assistants") if f.endswith(".png")
         ]
+        self.agent_meta = {
+            "F1.png": {"name": "Ava",   "gender": "female"},
+            "F2.png": {"name": "Mira",  "gender": "female"},
+            "F3.png": {"name": "Lena",  "gender": "female"},
+
+            "M1.png": {"name": "Ethan", "gender": "male"},
+            "M2.png": {"name": "Noah",  "gender": "male"},
+            "M3.png": {"name": "Leo",   "gender": "male"},
+
+            "N1.png": {"name": "Alex",  "gender": "neutral"},
+            "N2.png": {"name": "Riley", "gender": "neutral"},
+            "N3.png": {"name": "Jordan","gender": "neutral"},
+        }
 
         # Game stats
         self.max_health = 100
@@ -118,23 +131,31 @@ class Game:
                 print(f"\nAgent {trial_index}/9 in Hallway {level + 1}")
                 pygame.event.clear()  # clear leftovers
 
-                assistant_scale = 0.68  # your perfect size
-                bubble_scale = 0.11  # adjust if you want smaller or bigger bubbles
+                # Load image
+                assistant_image = pygame.image.load(
+                    f"images/assistants/{filename}"
+                ).convert_alpha()
 
-                assistant_image = pygame.image.load(f"images/assistants/{filename}")
-                assistant_image = pygame.transform.scale(
+
+                # FORCE all agents to same size (this fixes F1/F2)
+                TARGET_WIDTH = 340
+                TARGET_HEIGHT = 340
+
+                assistant_image = pygame.transform.smoothscale(
                     assistant_image,
-                    (
-                        int(assistant_image.get_width() * assistant_scale),
-                        int(assistant_image.get_height() * assistant_scale),
-                    ),
+                    (TARGET_WIDTH, TARGET_HEIGHT)
                 )
+                meta = self.agent_meta.get(filename, {})
+                agent_name = meta.get("name", "Agent")
+                agent_gender = meta.get("gender", "unknown")
 
                 direction = random.choice(["left", "right"])
                 agent_suggestion = direction
 
                 correct_door = random.choice(["left", "right"])
                 agent_truthfulness = agent_suggestion == correct_door
+
+                bubble_scale = 0.11
 
                 text_bubble_image = pygame.image.load(f"images/{direction}-speech-bubble.png")
                 text_bubble_image = pygame.transform.scale(
@@ -176,6 +197,19 @@ class Game:
                         ),
                     )
 
+                    # --- DRAW AGENT NAME (under agent) ---
+                    agent_name = self.agent_meta.get(filename, {}).get("name", "Agent")
+                    name_text = self.font.render(agent_name, True, (255, 255, 255))
+
+                    self.screen.blit(
+                        name_text,
+                        (
+                            self.width // 2 - name_text.get_width() // 2,
+                            self.height // 2 + assistant_image.get_height() // 2 + 10
+                        ),
+                    )
+
+
                     self._draw_health_bar()
                     self._draw_timer_bar()
 
@@ -204,6 +238,8 @@ class Game:
                                     "left",
                                     correct_door,
                                     filename,
+                                    agent_name,
+                                    agent_gender,
                                     agent_suggestion,
                                     agent_truthfulness,
                                     reaction_time_ms,
@@ -414,6 +450,8 @@ class Game:
             choice,
             correct_door,
             agent_filename,
+            agent_name,
+            agent_gender,
             agent_suggestion,
             agent_truthfulness,
             reaction_time_ms,
@@ -431,6 +469,8 @@ class Game:
                 hallway + 1,
                 trial,
                 agent_filename,
+                agent_name,
+                agent_gender,
                 agent_suggestion,
                 agent_truthfulness,
                 correct_door,
