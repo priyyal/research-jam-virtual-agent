@@ -20,7 +20,10 @@ class Game:
             time_per_hallway=50,
             enemy_speed=500,
             assistant_type="mixed",
-            round_times=None, wrong_penalty=5, seed=None
+            round_times=None, wrong_penalty=5, seed=None,
+            gender_sequence="MFN",
+            agent_accuracy=50,
+            unify_names=True,
     ) -> None:
         pygame.init()
         self.width = width
@@ -55,10 +58,19 @@ class Game:
             "N2.png": {"name": "Riley", "gender": "neutral"},
             "N3.png": {"name": "Jordan","gender": "neutral"},
         }
+        self.gender_names = {
+            "male": "John",
+            "female": "Mira",
+            "neutral": "Robin",
+        }
 
         # Game stats
         self.max_health = 100
         self.health = self.max_health
+        self.gender_sequence = (gender_sequence or "MFN").upper()
+        self.agent_accuracy = int(agent_accuracy)
+        self.unify_names = bool(unify_names)
+
 
 
         self.participant_id = self.participant_id.replace(" ", "").replace("/", "_")
@@ -86,11 +98,9 @@ class Game:
         )
 
 
-        # "w" = new file every run
         self.logfile = open(self.log_path, "w", newline="")
         self.logwriter = csv.writer(self.logfile)
 
-        # ✅ UPDATED HEADER: adds reaction_time_ms, compliance, health_at_choice
         self.logwriter.writerow(
             [
                 "timestamp",
@@ -121,11 +131,11 @@ class Game:
         hallway_image = pygame.image.load("images/hallway.png")
         hallway_image = pygame.transform.scale(hallway_image, (self.width, self.height))
 
-        # --- MAIN LOOP: 3 Hallways --- #
+        # MAIN LOOP: 3 Hallways
         for level in range(self.num_levels):
             print(f"\n=== Entering Hallway {level + 1} ===")
 
-            # --- SET PER-ROUND TIMER ---
+            # Set PER-ROUND TIMER
             self.max_time = (
                 self.round_times[level]
                 if level < len(self.round_times)
@@ -134,14 +144,13 @@ class Game:
             hallway_start_time = pygame.time.get_ticks()
             self.time_remaining = self.max_time * 1000
 
-            # 1️⃣ Pac-Man Maze first
+            # Pac-Man Maze first
             self._run_trial()
 
             # After maze, start hallway phase
-            randomized_filenames = deepcopy(self.image_filenames)
-            random.shuffle(randomized_filenames)
+            ordered_filenames = self._build_trial_filenames()
 
-            for trial_index, filename in enumerate(randomized_filenames[:9], start=1):
+            for trial_index, filename in enumerate(ordered_filenames, start=1):
                 print(f"\nAgent {trial_index}/9 in Hallway {level + 1}")
                 pygame.event.clear()  # clear leftovers
 
@@ -151,24 +160,25 @@ class Game:
                 ).convert_alpha()
 
 
-                # FORCE all agents to same size (this fixes F1/F2)
+                # FORCE all agents to same size
                 MAX_W = 340
                 MAX_H = 340
                 assistant_image = self.scale_to_fit(assistant_image, MAX_W, MAX_H)
 
                 meta = self.agent_meta.get(filename, {})
                 agent_name = meta.get("name", "Agent")
-                agent_gender = meta.get("gender", "unknown")
+                agent_gender = meta.get("gender", "unknown") \
 
-                direction = random.choice(["left", "right"])
-                agent_suggestion = direction
+                if self.unify_names and agent_gender in self.gender_names:
+                    agent_name = self.gender_names[agent_gender]
 
                 correct_door = random.choice(["left", "right"])
-                agent_truthfulness = agent_suggestion == correct_door
+                agent_suggestion = self._agent_suggestion_for_accuracy(correct_door)
+                agent_truthfulness = (agent_suggestion == correct_door)
 
                 bubble_scale = 0.11
 
-                text_bubble_image = pygame.image.load(f"images/{direction}-speech-bubble.png")
+                text_bubble_image = pygame.image.load(f"images/{agent_suggestion}-speech-bubble.png")
                 text_bubble_image = pygame.transform.scale(
                     text_bubble_image,
                     (
@@ -177,12 +187,12 @@ class Game:
                     ),
                 )
 
-                # ✅ NEW: timestamp when this agent appears (for reaction time)
+                # timestamp when this agent appears (for reaction time)
                 agent_shown_time = pygame.time.get_ticks()
 
                 show_hallway = True
 
-                # --- HALLWAY LOOP (until choice made or time up) --- #
+                # HALLWAY LOOP (until choice made or time up)
                 while show_hallway:
                     self.clock.tick(self.fps)
 
@@ -208,25 +218,15 @@ class Game:
                         ),
                     )
 
-                    # --- DRAW AGENT NAME (under agent) ---
-                    agent_name = self.agent_meta.get(filename, {}).get("name", "Agent")
-                    # --- DRAW AGENT NAME (under the speech bubble) ---
+                    # DRAW AGENT NAME under the speech bubble
                     name_text = self.font.render(agent_name, True, (255, 255, 255))
 
-                    # bubble_x = self.width // 2 - text_bubble_image.get_width() // 2
-                    # bubble_y = (
-                    #         self.height // 2
-                    #         - text_bubble_image.get_height()
-                    #         - assistant_image.get_height() // 2
-                    # )
 
                     name_x = self.width // 2 - name_text.get_width() // 2
                     #name_y = bubble_y + text_bubble_image.get_height() + 6  # just below bubble
                     name_y = self.height // 2 - assistant_image.get_height() // 2 - 18
 
                     self.screen.blit(name_text, (name_x, name_y))
-
-
 
                     self._draw_health_bar()
                     self._draw_timer_bar()
@@ -244,7 +244,7 @@ class Game:
                             if event.key == pygame.K_LEFT:
                                 self._flash_choice("left")
 
-                                # ✅ NEW MEASURES
+                                # NEW MEASURES
                                 reaction_time_ms = pygame.time.get_ticks() - agent_shown_time
                                 compliance = ("left" == agent_suggestion)
                                 health_at_choice = self.health
@@ -274,7 +274,7 @@ class Game:
                             elif event.key == pygame.K_RIGHT:
                                 self._flash_choice("right")
 
-                                # ✅ NEW MEASURES
+                                # NEW MEASURES
                                 reaction_time_ms = pygame.time.get_ticks() - agent_shown_time
                                 compliance = ("right" == agent_suggestion)
                                 health_at_choice = self.health
@@ -367,6 +367,43 @@ class Game:
     def _update_health(self, delta):
         self.health = max(0, min(self.max_health, self.health + delta))
         print(f"Health updated: {self.health}")
+
+    def _build_trial_filenames(self):
+        """Return exactly 9 filenames in gender blocks, ordered by self.gender_sequence."""
+        males = sorted([f for f in self.image_filenames if f.startswith("M")])[:3]
+        females = sorted([f for f in self.image_filenames if f.startswith("F")])[:3]
+        neutrals = sorted([f for f in self.image_filenames if f.startswith("N")])[:3]
+
+        group_map = {"M": males, "F": females, "N": neutrals}
+
+        seq = getattr(self, "gender_sequence", "MFN")
+        seq = (seq or "MFN").upper()
+        if seq not in {"MFN", "MNF", "FMN", "FNM", "NMF", "NFM"}:
+            seq = "MFN"  # safe default
+
+        filenames = []
+        for ch in seq:
+            filenames.extend(group_map[ch])
+
+        # safety: ensure we always return 9 if possible
+        return filenames[:9]
+
+    def _agent_suggestion_for_accuracy(self, correct_door):
+        """Given correct_door, return agent suggestion consistent with configured accuracy."""
+        acc = int(getattr(self, "agent_accuracy", 50))
+        if acc not in (0, 50, 100):
+            acc = 50
+
+        if acc == 100:
+            return correct_door
+        if acc == 0:
+            return "left" if correct_door == "right" else "right"
+
+        truthful = random.random() < 0.5
+        if truthful:
+            return correct_door
+        return "left" if correct_door == "right" else "right"
+
 
     def _draw_health_bar(self):
         bar_width = 300
