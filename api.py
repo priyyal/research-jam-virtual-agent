@@ -27,7 +27,7 @@ def next_participant_id():
 
 def run_game(width, height, num_levels, participant_id,
 			 time_per_hallway, enemy_speed, assistant_type,
-			 round_times, wrong_penalty, seed):
+			 round_times, wrong_penalty, seed, gender_sequence, agent_accuracy, unify_names):
 	game = Game(
 		width, height,
 		num_levels=num_levels,
@@ -37,7 +37,10 @@ def run_game(width, height, num_levels, participant_id,
 		assistant_type=assistant_type,
 		round_times=round_times,
 		wrong_penalty=wrong_penalty,
-		seed=seed
+		seed=seed,
+		gender_sequence=gender_sequence,
+		agent_accuracy=agent_accuracy,
+		unify_names=unify_names
 	)
 	game.run()
 
@@ -51,7 +54,7 @@ def start_game():
 
 	data = request.get_json(silent=True) or {}
 
-	# ---- defaults ----
+	# defaults
 	width = 800
 	height = 800
 	num_levels = int(data.get("num_levels", 3))
@@ -59,10 +62,21 @@ def start_game():
 	enemy_speed = int(data.get("enemy_speed", 500))
 	assistant_type = data.get("assistant_type", "mixed")
 
-	# NEW knobs
+	# existing knobs
 	round_times = data.get("round_times", [90, 60, 40])
 	wrong_penalty = int(data.get("wrong_penalty", 5))
 	seed = data.get("seed", None)
+
+	gender_sequence = (data.get("gender_sequence") or "MFN").upper()
+	agent_accuracy = int(data.get("agent_accuracy", 50))
+	unify_names = bool(data.get("unify_names", True))
+
+	allowed_sequences = {"MFN", "MNF", "FMN", "FNM", "NMF", "NFM"}
+	if gender_sequence not in allowed_sequences:
+		return jsonify({"error": f"gender_sequence must be one of {sorted(allowed_sequences)}"}), 400
+
+	if agent_accuracy not in (0, 50, 100):
+		return jsonify({"error": "agent_accuracy must be one of [0, 50, 100]"}), 400
 
 	# allow overriding participant_id (optional)
 	participant_id = data.get("participant_id") or next_participant_id()
@@ -86,6 +100,9 @@ def start_game():
 		"round_times": round_times,
 		"wrong_penalty": wrong_penalty,
 		"seed": seed,
+		"gender_sequence": gender_sequence,
+		"agent_accuracy": agent_accuracy,
+		"unify_names": unify_names,
 	}
 
 	current_process = multiprocessing.Process(
@@ -100,6 +117,9 @@ def start_game():
 			round_times,
 			wrong_penalty,
 			seed,
+			gender_sequence,
+			agent_accuracy,
+			unify_names,
 		),
 	)
 	current_process.start()
