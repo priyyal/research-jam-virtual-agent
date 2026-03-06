@@ -433,6 +433,23 @@ frameborder="1"
     }
 
     </script>
+    <script>
+    window.saveTrialLog = async function(data) {
 
+    const url = "https://btcfpkhyjamfcjoztzhc.supabase.co";
+    const key = "sb_publishable_l5fCsQAGrclMAfmbEM_xow_-sFug9au";
+
+    await fetch(url, {
+    method: "POST",
+    headers: {
+    "Content-Type": "application/json",
+    "apikey": key,
+    "Authorization": "Bearer " + key
+    },
+    body: JSON.stringify(data)
+    });
+
+    }
+</script>
 </body>
 </html>

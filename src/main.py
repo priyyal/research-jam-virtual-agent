@@ -544,6 +544,34 @@ class Game:
         )
         self.logfile.flush()
 
+        try:
+            import platform
+
+            row = {
+                "participant_id": self.participant_id,
+                "run_id": self.run_id,
+                "hallway": hallway + 1,
+                "trial": trial,
+                "agent_image": agent_filename,
+                "agent_name": agent_name,
+                "agent_gender": agent_gender,
+                "agent_suggestion": agent_suggestion,
+                "agent_truthfulness": agent_truthfulness,
+                "correct_door": correct_door,
+                "player_choice": choice,
+                "correct": correct,
+                "reaction_time_ms": reaction_time_ms,
+                "compliance": compliance,
+                "health_at_choice": health_at_choice,
+                "health_after": self.health,
+                "time_remaining": self.time_remaining / 1000
+            }
+
+            platform.window.saveTrialLog(row)
+
+        except Exception as e:
+            print("Supabase log skipped:", e)
+
     def _show_x_ray(self):
         pygame.draw.rect(self.screen, (210, 74, 210), (80, 80, 100, 400))
         pygame.draw.rect(self.screen, (100, 54, 100), (680, 80, 100, 400))
