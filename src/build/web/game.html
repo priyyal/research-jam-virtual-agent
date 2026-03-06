@@ -436,20 +436,28 @@ frameborder="1"
     <script>
     window.saveTrialLog = async function(data) {
 
-    const url = "https://btcfpkhyjamfcjoztzhc.supabase.co";
-    const key = "sb_publishable_l5fCsQAGrclMAfmbEM_xow_-sFug9au";
+    const url = "https://btcfpkhyjamfcjoztzhc.supabase.co/rest/v1/trial_logs";
+    const key = "YOUR_ANON_OR_PUBLISHABLE_KEY";
 
-    await fetch(url, {
-    method: "POST",
-    headers: {
-    "Content-Type": "application/json",
-    "apikey": key,
-    "Authorization": "Bearer " + key
-    },
-    body: JSON.stringify(data)
-    });
+    try {
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "apikey": key,
+                "Authorization": "Bearer " + key,
+                "Prefer": "return=representation"
+            },
+            body: JSON.stringify(data)
+        });
 
+        const text = await res.text();
+        console.log("Supabase status:", res.status);
+        console.log("Supabase response:", text);
+    } catch (err) {
+        console.error("Supabase fetch failed:", err);
     }
+}
 </script>
 </body>
 </html>
