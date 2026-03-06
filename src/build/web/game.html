@@ -301,14 +301,14 @@ function show_infobox() {
 
 
     <canvas class="emscripten" id="canvas"
-width="1px"
-height="1px"
+        width="1px"
+        height="1px"
     oncontextmenu="event.preventDefault()" tabindex=1>
     </canvas>
 
     <canvas class="emscripten" id="canvas3d"
-width="1280px"
-height="720px"
+        width="1280px"
+        height="720px"
     oncontextmenu="event.preventDefault()" tabindex=1 hidden>
     </canvas>
 
@@ -343,11 +343,11 @@ height="720px"
             <div id="info" class="trinfo"></div>
 
             <iframe id="iframe" class="framed" name="iframe"
-width="470px" height="90%"
-allowtransparency="true"
-style="z-index: 10;"
-style="background: #FFFFFF;"
-frameborder="1"
+                width="470px" height="90%"
+                allowtransparency="true"
+                style="z-index: 10;"
+                style="background: #FFFFFF;"
+                frameborder="1"
                 allowfullscreen="true"
                 webkitallowfullscreen="true"
                 msallowfullscreen="true"
@@ -436,28 +436,28 @@ frameborder="1"
     <script>
     window.saveTrialLog = async function(data) {
 
-    const url = "https://btcfpkhyjamfcjoztzhc.supabase.co/rest/v1/trial_logs";
-    const key = "sb_publishable_l5fCsQAGrclMAfmbEM_xow_-sFug9au";
+        const url = "https://btcfpkhyjamfcjoztzhc.supabase.co/rest/v1/trial_logs";
+        const key = "sb_publishable_l5fCsQAGrclMAfmbEM_xow_-sFug9au";
 
-    try {
-        const res = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "apikey": key,
-                "Authorization": "Bearer " + key,
-                "Prefer": "return=representation"
-            },
-            body: JSON.stringify(data)
-        });
+        try {
+            const res = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": key,
+                    "Authorization": "Bearer " + key,
+                    "Prefer": "return=representation"
+                },
+                body: JSON.stringify(data)
+            });
 
-        const text = await res.text();
-        console.log("Supabase status:", res.status);
-        console.log("Supabase response:", text);
-    } catch (err) {
-        console.error("Supabase fetch failed:", err);
+            const text = await res.text();
+            console.log("Supabase status:", res.status);
+            console.log("Supabase response:", text);
+        } catch (err) {
+            console.error("Supabase fetch failed:", err);
+        }
     }
-}
 </script>
 </body>
 </html>
