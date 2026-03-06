@@ -16,13 +16,15 @@
         }
 
         .play-btn {
-            margin-top: 40px;
-            padding: 20px 40px;
-            font-size: 24px;
-            background: #4CAF50;
-            border: none;
-            color: white;
-            cursor: pointer;
+        display: inline-block;
+        margin-top: 40px;
+        padding: 20px 40px;
+        font-size: 24px;
+        background: #4CAF50;
+        color: white;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
         }
 
         .play-btn:hover {
@@ -37,9 +39,7 @@
 
 <p>A maze navigation experiment built with Python & Pygame</p>
 
-<button class="play-btn" onclick="window.location.href='game.html'">
-Play Game
-</button>
+<a class="play-btn" href="./game.html">Play Game</a>
 
 </body>
 </html>
