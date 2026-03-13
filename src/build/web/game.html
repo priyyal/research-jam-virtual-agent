@@ -372,92 +372,65 @@ function show_infobox() {
     </div>
 
     <script type="application/javascript">
-
-    globalThis.__canvas_resized = (self, ecw, ech) => {
-        console.warn("TODO: panda3d canvas monitor", self, ecw, ech)
-    }
-
-    async function custom_onload(debug_hidden) {
-        // this is called before anything python is loaded
-        // make your js customization here
-        console.log(__FILE__, "custom_onload")
-
-        pyconsole.hidden = debug_hidden
-        system.hidden = debug_hidden
-        transfer.hidden = debug_hidden
-        info.hidden = debug_hidden
-        box.hidden =  debug_hidden
-
-        show_infobox()
-    }
-
-    function custom_prerun(){
-        // no python main and no (MEMFS + VFS) yet.
-        console.log(__FILE__, "custom_prerun")
-
-    }
-
-    function custom_postrun(){
-        // python main and no VFS filesystem yet.
-        console.log(__FILE__, "custom_postrun")
-
-    }
-
-    function debug() {
-        // allow to gain access to dev tools from js console
-        // but only on desktop. difficult to reach when in iframe
-        python.config.debug = true
-        custom_onload(false)
-        Module.PyRun_SimpleString("shell.uptime()")
-        window_resize()
-    }
-
-    function info_inline(data){
-        document.getElementById("info").innerHTML = data
-    }
-
-    function info_online(url) {
-        // display info about current APK
-        fetch( url /*, options */)
-            .then((response) => response.text())
-            .then((html) => {
-                info_inline(html);
-        })
-        .catch((error) => {
-            console.warn(error);
-        });
-    }
-
-    function frame_online(url) {
-        window.frames["iframe"].location = url;
-    }
-
-    </script>
-    <script>
-    window.saveTrialLog = async function(data) {
-
-        const url = "https://btcfpkhyjamfcjoztzhc.supabase.co/rest/v1/trial_logs";
-        const key = "sb_publishable_l5fCsQAGrclMAfmbEM_xow_-sFug9au";
-
-        try {
-            const res = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "apikey": key,
-                    "Authorization": "Bearer " + key,
-                    "Prefer": "return=representation"
-                },
-                body: JSON.stringify(data)
-            });
-
-            const text = await res.text();
-            console.log("Supabase status:", res.status);
-            console.log("Supabase response:", text);
-        } catch (err) {
-            console.error("Supabase fetch failed:", err);
+        globalThis.__canvas_resized = (self, ecw, ech) => {
+            console.warn("TODO: panda3d canvas monitor", self, ecw, ech)
         }
-    }
-</script>
+
+        async function custom_onload(debug_hidden) {
+            // this is called before anything python is loaded
+            // make your js customization here
+            console.log(__FILE__, "custom_onload")
+
+            pyconsole.hidden = debug_hidden
+            system.hidden = debug_hidden
+            transfer.hidden = debug_hidden
+            info.hidden = debug_hidden
+            box.hidden =  debug_hidden
+
+            show_infobox()
+        }
+
+        function custom_prerun(){
+            // no python main and no (MEMFS + VFS) yet.
+            console.log(__FILE__, "custom_prerun")
+
+        }
+
+        function custom_postrun(){
+            // python main and no VFS filesystem yet.
+            console.log(__FILE__, "custom_postrun")
+
+        }
+
+        function debug() {
+            // allow to gain access to dev tools from js console
+            // but only on desktop. difficult to reach when in iframe
+            python.config.debug = true
+            custom_onload(false)
+            Module.PyRun_SimpleString("shell.uptime()")
+            window_resize()
+        }
+
+        function info_inline(data){
+            document.getElementById("info").innerHTML = data
+        }
+
+        function info_online(url) {
+            // display info about current APK
+            fetch( url /*, options */)
+                .then((response) => response.text())
+                .then((html) => {
+                    info_inline(html);
+            })
+            .catch((error) => {
+                console.warn(error);
+            });
+        }
+
+        function frame_online(url) {
+            window.frames["iframe"].location = url;
+        }
+    </script>
+    
 </body>
 </html>

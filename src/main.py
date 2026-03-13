@@ -2,12 +2,42 @@ import os
 from copy import deepcopy
 import random
 import asyncio
+import json
+import platform
 
 import csv, datetime
 import pygame
 from maze import Maze
 from actors import Player, Enemy
 
+async def save_to_supabase(data):
+    if platform.system() == "Emscripten":
+        # platform.window.console.log("About to call fetch...")
+        try:
+            import js
+            
+            url = "https://btcfpkhyjamfcjoztzhc.supabase.co/rest/v1/trial_logs"
+            key = "sb_publishable_l5fCsQAGrclMAfmbEM_xow_-sFug9au"
+            
+            res = await js.fetch(url, js.eval(f"""({{
+                method: "POST",
+                headers: {{
+                    "Content-Type": "application/json",
+                    "apikey": "{key}",
+                    "Authorization": "Bearer {key}",
+                    "Prefer": "return=representation"
+                }},
+                body: {json.dumps(json.dumps(data))}
+            }})"""))
+            # platform.window.console.log("Status: " + str(res.status))
+            # text = await res.text()
+            # platform.window.console.log("Response: " + str(text))
+        except Exception as e:
+            platform.window.console.log("fetch failed: " + type(e).__name__ + " " + str(e))
+
+
+class GameOver(Exception):
+    pass
 
 class Game:
     def __init__(
@@ -26,6 +56,7 @@ class Game:
             unify_names=True,
     ) -> None:
         pygame.init()
+        self.platform_is_web = platform.system() == "Emscripten"
         self.width = width
         self.height = height
         self.participant_id = participant_id
@@ -145,8 +176,13 @@ class Game:
             self.time_remaining = self.max_time * 1000
 
             # Pac-Man Maze first
-            await self._run_trial()
-
+            try:
+                await self._run_trial()
+            except GameOver as e:
+                self._game_over(str(e))
+                if self.platform_is_web: return
+                close_game()
+            
             # After maze, start hallway phase
             ordered_filenames = self._build_trial_filenames()
 
@@ -238,6 +274,7 @@ class Game:
 
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
+                            if self.platform_is_web: return
                             close_game()
 
                         if event.type == pygame.KEYDOWN:
@@ -336,6 +373,7 @@ class Game:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    if self.platform_is_web: return
                     close_game()
 
             if (player.x, player.y) == maze.goal:
@@ -357,8 +395,7 @@ class Game:
                             enemy.move()
                         except IndexError:
                             print("Player was caught!")
-                            self._game_over("The enemy caught you!")
-                            close_game()
+                            raise GameOver("Enemy caught you!")
                         enemy_move_time = pygame.time.get_ticks()
                     enemy.draw()
 
@@ -470,7 +507,7 @@ class Game:
     def _final_victory_screen(self):
         """Display the final completion message."""
         self.screen.fill((0, 0, 0))
-        text1 = self.font.render("🎉 ALL HALLWAYS COMPLETED! 🎉", True, (0, 255, 0))
+        text1 = self.font.render("ALL HALLWAYS COMPLETED!", True, (0, 255, 0))
         text2 = self.font.render("Great job!", True, (255, 255, 255))
         self.screen.blit(
             text1,
@@ -482,9 +519,7 @@ class Game:
         )
         pygame.display.update()
         pygame.time.delay(3000)
-        print("All hallways complete – exiting game.")
-        pygame.quit()
-        raise SystemExit
+        print("All hallways complete.")
 
     def _flash_choice(self, choice):
         flash_color = (0, 255, 0)
@@ -545,8 +580,6 @@ class Game:
         self.logfile.flush()
 
         try:
-            import platform
-
             row = {
                 "participant_id": self.participant_id,
                 "run_id": self.run_id,
@@ -566,8 +599,8 @@ class Game:
                 "health_after": self.health,
                 "time_remaining": self.time_remaining / 1000
             }
-
-            platform.window.saveTrialLog(row)
+            print(row)
+            asyncio.ensure_future(save_to_supabase(row))
 
         except Exception as e:
             print("Supabase log skipped:", e)
