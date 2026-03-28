@@ -327,7 +327,7 @@ class Game:
         player = Player(maze)
         enemy = Enemy(maze, player)
         enemy_move_time = pygame.time.get_ticks()
-        enemy_move_delay = 300  # milliseconds
+        enemy_move_delay = self.enemy_move_delay
         enemy_is_active = False
 
         while True:
@@ -561,7 +561,7 @@ def close_game():
 
 
 def main():
-    Game(800, 800, num_levels=3).run()
+    Game(800, 800, num_levels=3, enemy_speed=700).run()
     print("----------------------SCRIPT COMPLETE----------------------")
 
 

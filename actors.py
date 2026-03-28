@@ -39,6 +39,7 @@ class Player(Actor):
     def __init__(self, maze):
         super().__init__(maze)
         self.color = (0, 255, 0)
+        self.move_delay = 70
 
     def _get_direction(self):
         dx, dy = 0, 0
@@ -77,6 +78,7 @@ class Enemy(Actor):
         super().__init__(maze)
         self.color = (255, 0, 0)
         self.player = player
+        self.move_delay = 150
 
     def _get_direction(self):
         queue = deque([((self.x, self.y), [])])  # (current position, path taken)
