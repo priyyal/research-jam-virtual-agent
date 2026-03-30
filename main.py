@@ -561,9 +561,37 @@ def close_game():
 
 
 def main():
-    Game(800, 800, num_levels=3, enemy_speed=700).run()
-    print("----------------------SCRIPT COMPLETE----------------------")
+    participant_id = "UNKNOWN"
 
+    try:
+        import platform
+        search = str(platform.window.location.search or "")
+        if search.startswith("?"):
+            search = search[1:]
+
+        params = {}
+        if search:
+            for part in search.split("&"):
+                if "=" in part:
+                    key, value = part.split("=", 1)
+                    params[key] = value
+
+        participant_id = params.get("participant_id") or ""
+    except Exception:
+        participant_id = ""
+
+    if not participant_id:
+        participant_id = f"W-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+    Game(
+        800,
+        800,
+        num_levels=3,
+        enemy_speed=650,
+        participant_id=participant_id,
+    ).run()
+
+    print("----------------------SCRIPT COMPLETE----------------------")
 
 if __name__ == "__main__":
     main()

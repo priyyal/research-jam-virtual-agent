@@ -624,7 +624,29 @@ def close_game():
 
 
 async def main():
-    game = Game(800, 800, num_levels=3)
+    participant_id = ""
+
+    try:
+        if platform.system() == "Emscripten":
+            search = str(platform.window.location.search or "")
+            if search.startswith("?"):
+                search = search[1:]
+
+            params = {}
+            if search:
+                for part in search.split("&"):
+                    if "=" in part:
+                        key, value = part.split("=", 1)
+                        params[key] = value
+
+            participant_id = params.get("participant_id", "").strip()
+    except Exception as e:
+        print("Could not read participant_id from URL:", e)
+
+    if not participant_id:
+        participant_id = f"W-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+    game = Game(800, 800, num_levels=3, participant_id=participant_id)
     await game.run()
     print("----------------------SCRIPT COMPLETE----------------------")
 
